@@ -4,6 +4,7 @@
 // operators (`ui.open`, `ui.close`, `prefs.set`), the navigation port and the shell-neutral registrations
 // (STUDIO-TOUCH-SPEC T3: marking-menu definitions, Rig menus and settings, view operators, the Recovery prompt). Every
 // shell (Studio, Auto-Rig, Halo) sits on top of it; it outlives every switch between them.
+import { listenWorldEngine } from '../services/motorBridge';
 import type { Disposer } from '@ekza-studio/anim-core';
 import {
   type EditorApp,
@@ -231,6 +232,8 @@ export function createHostShell(opts: CreateHostOptions): HostShell {
     },
   );
   disposers.push(() => files.dispose());
+  // Jogo Stickman World Engine: open the character it sends (no-op outside its iframe).
+  disposers.push(listenWorldEngine((name, bytes) => files.openFile(name, bytes)));
 
   // STUDIO-TOUCH-SPEC §20.3 item 13 (T2): after a touch or pen press the key scope is the last pressed panel (touch
   // has no hover, and WebKit sends `pointerleave` after a lift); a mouse keeps the hovered one.
