@@ -28,6 +28,8 @@ const DEV_PAGE_EXTENSIONS = [...PAGE_EXTENSIONS, 'dev.tsx'];
  * route itself answers 404 unless GEN_GATEWAY_ENABLED=1 (default deny).
  */
 const SERVER_EXTENSIONS = ['gen.ts'];
+/** Sub-path the static export is served from ('' = site root). */
+const basePath = (process.env.STUDIO_BASE_PATH ?? '').trim().replace(/\/$/, '');
 /** The gateway URL fixed at build time (static exports connect only to it); its origin enters the CSP. */
 const gatewayUrl = (process.env[GATEWAY_URL_ENV] ?? '').trim();
 
@@ -42,6 +44,8 @@ export default function nextConfig(phase: string): NextConfig {
   const csp = buildCsp({ dev, gatewayOrigin: gatewayOrigin(gatewayUrl), header: true });
   return {
     ...(staticExport ? { output: 'export' } : {}),
+    // Served under a sub-path (the Jogo Stickman World Engine serves it at /animador): STUDIO_BASE_PATH=/animador.
+    ...(basePath !== '' ? { basePath, assetPrefix: basePath } : {}),
     pageExtensions,
     // The generation client's base: the build-time URL, else the server build's own route; '' = no gateway (static).
     env: { NEXT_PUBLIC_EKZA_GEN_GATEWAY: gatewayUrl !== '' ? gatewayUrl : staticExport ? '' : '/api/gen' },

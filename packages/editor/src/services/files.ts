@@ -8,6 +8,7 @@
 // The ticket code (`./saveTicket`) and the prompt are lazy chunks: a desktop page that only downloads never loads them.
 import type { FileService } from '@ekza-studio/editor-core';
 import { isIosWebKit } from './fileTypes';
+import { sendToWorldEngine } from './motorBridge';
 import type * as Tickets from './saveTicket';
 import type { SaveFile, SavePlatform, SaveQueue, SaveTicket } from './saveTicket';
 
@@ -43,6 +44,8 @@ export function blobPart(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
 
 /** Downloads `bytes` through a temporary object URL and a hidden `<a download>`. */
 export function anchorDownload(name: string, bytes: Uint8Array, mime: string): void {
+  // Inside the Jogo Stickman World Engine the file goes to the engine (it stores it in the game's bucket).
+  if (sendToWorldEngine(name, bytes, mime)) return;
   const url = URL.createObjectURL(new Blob([blobPart(bytes)], { type: mime }));
   const anchor = document.createElement('a');
   anchor.href = url;
