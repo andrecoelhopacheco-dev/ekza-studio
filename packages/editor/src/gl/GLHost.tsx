@@ -11,6 +11,7 @@
 import { EkzaError } from '@ekza-studio/anim-core';
 import {
   applyTextureCap,
+  type NavigationOverride,
   registerViewportContributions,
   ViewportManager,
   viewportTestApi,
@@ -20,6 +21,7 @@ import { Component, type ErrorInfo, type JSX, type ReactNode, useEffect, useRef,
 import { useHost } from '../host/context';
 import { type MemoryProfile, memoryProfileOf } from '../host/memoryProfile';
 import type { HostShell } from '../host/types';
+import { inWorldEngine } from '../services/motorBridge';
 import { createFrameGate, type FrameGate } from './frameGate';
 import { probeWebGl, rendererName } from './webgl';
 
@@ -104,6 +106,9 @@ function attachRenderer(shell: HostShell, state: RootState, gate: FrameGate, pro
   if (vm !== null) {
     const manager = vm;
     manager.setNavProfile(app.prefs.getState().navProfile);
+    // Inside the Jogo Stickman World Engine the camera works like every other view of the engine: right-drag
+    // tumbles (Shift+right tracks), middle tracks, the wheel dollies at the cursor. Alt chords keep the profile.
+    if (inWorldEngine()) manager.setNavigationOverride(WORLD_ENGINE_NAVIGATION);
     unsubscribePrefs = app.prefs.subscribe((prefs, previous) => {
       if (prefs.navProfile !== previous.navProfile) manager.setNavProfile(prefs.navProfile);
     });
@@ -149,6 +154,16 @@ function attachRenderer(shell: HostShell, state: RootState, gate: FrameGate, pro
     }
   };
 }
+
+/** The World Engine's camera (motor_mundo/src/editor/controle_camera.ts), as an Ekza navigation override. */
+const WORLD_ENGINE_NAVIGATION: NavigationOverride = {
+  gesture(e) {
+    if (e.altKey) return null;
+    if (e.button === 2) return e.shiftKey ? 'track' : 'tumble';
+    if (e.button === 1) return 'track';
+    return null;
+  },
+};
 
 export function GLHost(): JSX.Element | null {
   const shell = useHost();
